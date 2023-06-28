@@ -35,3 +35,37 @@ npm install
 ```
 npm start
 ```
+
+## Kubernetes
+
+### Deployment and service
+
+1. Install the deployment
+
+```
+kubectl apply -f deployment.yml
+```
+
+2. Install the service
+
+```
+kubectl apply -f service.yml
+```
+
+3. Install the ingress
+
+```
+kubectl apply -f ingress.yml
+```
+
+### Nginx ingress
+```
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --namespace ingress-nginx --create-namespace
+```
+
+## Improvements
+1. Resources requests and limits on the deployment
+2. Certificates for the ingress: would require also the installation of cert-manager to be used together with Let's Encrypt
+3. Replace Nginx ingress annotation with an IngressClass
