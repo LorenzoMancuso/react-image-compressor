@@ -2,8 +2,8 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-resource "aws_ecr_repository" "base_ecr_repository" {
-  name = "base-ecr-repository"
+resource "aws_ecr_repository" "image_compressor_ecr_repository" {
+  name = "image-compressor"
 }
 
 resource "aws_iam_role" "codebuild_role" {
@@ -24,7 +24,7 @@ resource "aws_iam_role" "codebuild_role" {
 
 resource "aws_iam_policy" "codebuild_policy" {
   name        = "codebuild-policy"
-  description = "Policy to push on ${aws_ecr_repository.base_ecr_repository.name} ECR repository"
+  description = "Policy to push on ${aws_ecr_repository.image_compressor_ecr_repository.name} ECR repository"
   policy      = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -38,7 +38,7 @@ resource "aws_iam_policy" "codebuild_policy" {
           "ecr:UploadLayerPart"
         ]
         Effect   = "Allow"
-        Resource = [aws_ecr_repository.base_ecr_repository.arn]
+        Resource = [aws_ecr_repository.image_compressor_ecr_repository.arn]
       },
       {
         Action = [
@@ -69,10 +69,6 @@ resource "aws_iam_role_policy_attachment" "queue_read_policy_attachment" {
   policy_arn = aws_iam_policy.codebuild_policy.arn
 }
 
-data "local_file" "buildspec_local" {
-  filename = "../buildspec.yml"
-}
-
 resource "aws_codebuild_project" "nodejs_codebuild_project" {
   name          = "nodejs-codebuild-project"
   description   = "nodejs app CodeBuild project"
@@ -90,8 +86,24 @@ resource "aws_codebuild_project" "nodejs_codebuild_project" {
   }
 
   source {
-    type                = "NO_SOURCE"
-    buildspec           = data.local_file.buildspec_local.content
-    report_build_status = true
+    type            = "GITHUB"
+    location        = "https://github.com/LorenzoMancuso/react-image-compressor.git"
+    git_clone_depth = 1
+  }
+}
+
+resource "aws_codebuild_webhook" "nodejs_codebuild_project_trigger" {
+  project_name = aws_codebuild_project.nodejs_codebuild_project.name
+  build_type   = "BUILD"
+  filter_group {
+    filter {
+      type    = "EVENT"
+      pattern = "PUSH"
+    }
+
+    filter {
+      type    = "HEAD_REF"
+      pattern = "master"
+    }
   }
 }

@@ -1,21 +1,18 @@
-FROM node:16-alpine 
+FROM node:16-alpine as builder
 WORKDIR /app
-
-CMD [ "npx", "start"]
-
+# Copy the package for the dependencies
 COPY package*.json ./
-
 # Install dependencies using the versions in lockfile
 RUN npm ci
-
 # Copy the rest of the application code
 COPY public ./public
 COPY src ./src
 # Build the app
 RUN npm run build
 
-# Expose a port
+FROM node:16-alpine
+WORKDIR /app
+COPY --from=builder /app/build ./build
+# Expose react port
 EXPOSE 3000
-
-# Start the application
 CMD ["npx", "serve", "build"]
