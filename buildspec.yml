@@ -3,6 +3,7 @@ version: 0.2
 env:
   variables:
     AWS_REGION: "eu-west-1"
+    AWS_CLUSTER_NAME: eks-production
     AWS_ACCOUNT_ID: "572515290220"
     ECR_REPOSITORY_NAME: "base-ecr-repository"
     IMAGE_TAG: "latest"
@@ -11,11 +12,19 @@ phases:
   install:
     runtime-versions:
       docker: 23
-      #kubectl: latest
+    commands:
+      - echo Installing app dependencies...
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.15.10/2020-02-22/bin/linux/amd64/kubectl   
+      - chmod +x ./kubectl
+      - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+      - source ~/.bashrc
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - echo Logging in to Amazon EKS...
+      - aws eks --region $AWS_REGION update-kubeconfig --name $AWS_CLUSTER_NAME
   build:
     commands:
       - echo Building the Docker image...
@@ -24,5 +33,7 @@ phases:
     commands:
       - echo Pushing the Docker image to Amazon ECR...
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_NAME:$IMAGE_TAG
-      #- echo Applying Kubernetes deployment and service...
-      #- kubectl apply -f kubernetes-deployment.yaml
+  deploy:
+    commands:
+      - echo Applying Kubernetes deployment and service...
+      - kubectl apply -f k8s/deployment.yaml

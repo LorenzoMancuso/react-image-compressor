@@ -39,7 +39,27 @@ resource "aws_iam_policy" "codebuild_policy" {
         ]
         Effect   = "Allow"
         Resource = [aws_ecr_repository.base_ecr_repository.arn]
-      }
+      },
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "*"
+        ]
+      },
+      {
+        Action = [
+          "eks:Describe*"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "*"
+        ]
+      },
     ]
   })
 }

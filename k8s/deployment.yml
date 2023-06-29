@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
       - name: image-compressor
-        image: react-image-compressor
+        image: 572515290220.dkr.ecr.us-west-1.amazonaws.com/web-app:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
